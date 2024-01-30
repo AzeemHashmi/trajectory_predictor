@@ -2,6 +2,7 @@ import cv2
 import cvzone
 from cvzone.ColorModule import ColorFinder
 import numpy as np
+import math
 
 # If we give true boolean value, this will return a debug window to help us find the color value
 ball_color_finder = ColorFinder(False)
@@ -21,9 +22,11 @@ position_list_x, position_list_y = [], []
 # image width is 1300
 xList = [item for item in range(0, 1300)]
 
+prediction = False
+
 
 # initializing the stream
-stream = cv2.VideoCapture("assets/vid (1).mp4")
+stream = cv2.VideoCapture("assets/vid (4).mp4")
 
 while True:
     # Get the image of ball
@@ -68,9 +71,44 @@ while True:
                     2,
                 )
 
+        # generating predictive circles
         for x in xList:
-            y = int(A * x ** 2 + B * x + C)
+            y = int(A * x**2 + B * x + C)
             cv2.circle(image_contours, (x, y), 2, (255, 0, 255), cv2.FILLED)
+
+        # now to confirm the ball will be basket or not, we have determine that basket position in image is
+        # 330 to 430 on x-axis and 590 on y-axis
+        # as now we have fixed value of y, we will now calculate x from y
+        # search solve quadratic expression for x
+        if len(position_list_x) < 10:
+            a = A
+            b = B
+            c = C - 590
+
+            x = int((-b - math.sqrt(b**2 - (4 * a * c))) / (2 * a))
+
+            prediction = 330 < x < 430
+
+        if prediction:
+            cvzone.putTextRect(
+                image_contours,
+                "Basket",
+                (50, 100),
+                scale=5,
+                thickness=5,
+                colorR=(0, 200, 0),
+                offset=20,
+            )
+        else:
+            cvzone.putTextRect(
+                image_contours,
+                "No Basket",
+                (50, 100),
+                scale=5,
+                thickness=5,
+                colorR=(0, 0, 200),
+                offset=20,
+            )
 
     # display the window
     image = cv2.resize(image, (0, 0), None, 0.7, 0.7)
